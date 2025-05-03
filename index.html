@@ -37,13 +37,32 @@
         <main class="content">
             <div class="content__body">
                 <div class="content__case stacker">
-                    <textarea
-                        name="name_punishField" 
-                        id="id_punishField" 
-                        class="stacker__punish" 
-                        placeholder="Введите данные для стака наказаний"
-                        spellcheck="false"
-                    ></textarea>
+                    <div class="server-select-container">
+                        <select id="id_serverSelect" class="server-select">
+                            <option value="all">Выбор сервера</option>
+                            <option value="New York">New York</option>
+                            <option value="Detroit">Detroit</option>
+                            <option value="Chicago">Chicago</option>
+                            <option value="San Francisco">San Francisco</option>
+                            <option value="Atlanta">Atlanta</option>
+                            <option value="Los Angeles">Los Angeles</option>
+                            <option value="Miami">Miami</option>
+                            <option value="Las Vegas">Las Vegas</option>
+                            <option value="Washington">Washington</option>
+                            <option value="Boston">Boston</option>
+                            <option value="Houston">Houston</option>
+                            <option value="Seattle">Seattle</option>
+                        </select>
+                    </div>
+                    <div class="input-container">
+                        <textarea
+                            name="name_punishField" 
+                            id="id_punishField" 
+                            class="stacker__punish punish-field" 
+                            placeholder="Введите данные для стака наказаний"
+                            spellcheck="false"
+                        ></textarea>
+                    </div>
                     <div class="stacker__controls">
                         <button onclick="punishStack()" class="stacker__button">Обработать</button>
                     </div>

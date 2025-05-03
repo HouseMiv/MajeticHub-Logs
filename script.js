@@ -4,6 +4,7 @@ const punishStack = () => {
     const resultsContainer = document.getElementById('id_resultsContainer');
     const copyButton = document.querySelector('.copy-button');
     const resultsCase = document.querySelector('.results-case');
+    const serverSelect = document.getElementById('id_serverSelect');
     
     resultTable.innerHTML = '';
     
@@ -18,7 +19,115 @@ const punishStack = () => {
     // Parse input commands
     const lines = field.value.trim().split('\n');
     const resultMap = new Map();
-    const warnCommands = [];
+    const selectedServer = serverSelect.value;
+
+    // Server-specific rules
+    const serverRules = {
+        'New York': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Detroit': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Chicago': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'San Francisco': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Atlanta': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Los Angeles': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Miami': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Las Vegas': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Washington': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        },
+        'Boston': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: (time, violations) => {
+                if (time >= 120) {
+                    // For Boston server, when total ajail time >= 120,
+                    // ban time is equal to number of violations
+                    const banTime = Math.max(3, violations.length);
+                    return { command: 'ban', time: banTime };
+                }
+                return null;
+            }
+        },
+        'Houston': {
+            maxAjailTime: 90,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: (time) => {
+                if (time >= 105 && time <= 125) return { command: 'ban', time: 3 };
+                if (time >= 126 && time <= 135) return { command: 'ban', time: 4 };
+                if (time >= 136 && time <= 150) return { command: 'ban', time: 5 };
+                if (time >= 151 && time <= 165) return { command: 'ban', time: 6 };
+                if (time > 165) {
+                    // Calculate additional days: every 15 minutes over 165 adds 1 day
+                    const additionalDays = Math.floor((time - 165) / 15);
+                    return { command: 'ban', time: 6 + additionalDays };
+                }
+                if (time >= 100) return { command: 'ajail', time: 90 };
+                return null;
+        }
+        },
+        'Seattle': {
+            maxAjailTime: 720,
+            maxBanTime: 9999,
+            maxHardbanTime: 9999,
+            combineSameViolations: true,
+            ajailToBan: null
+        }
+    };
 
     for (const line of lines) {
         if (!line.trim()) continue;
@@ -29,18 +138,10 @@ const punishStack = () => {
         const [_, command, id, time, reason, admin] = match;
         const date = reason.match(/\(([^)]+)\)/)?.[1] || '';
         
-        // Special handling for warn commands
-        if (command === 'warn') {
-            warnCommands.push({
-                id,
-                command,
-                time: parseInt(time),
-                reason: reason.trim(),
-                admin,
-                date
-            });
-            continue;
-        }
+        // Check if the violation is for the selected server
+
+        // Get server-specific rules
+        const rules = selectedServer === 'all' ? serverRules['New York'] : serverRules[selectedServer];
         
         const key = `${id}-${command}`;
         if (!resultMap.has(key)) {
@@ -56,12 +157,129 @@ const punishStack = () => {
             });
         } else {
             const existing = resultMap.get(key);
-            existing.time += parseInt(time);
-            existing.violations.push({
-                reason: reason.trim(),
-                admin,
-                date
-            });
+            
+            // Apply server-specific time limits
+            let newTime = existing.time + parseInt(time);
+            
+            // Get server-specific rules
+            const rules = selectedServer === 'all' ? serverRules['New York'] : serverRules[selectedServer];
+            
+            // Special handling for Houston server
+            if (selectedServer === 'Houston' && command === 'ajail') {
+                // Apply Houston rules to individual times
+                const currentTime = parseInt(time);
+                const existingTime = existing.time;
+                
+                // First sum the times
+                newTime = existingTime + currentTime;
+                
+                // Check if we need to convert to ban
+                const conversion = rules.ajailToBan(newTime);
+                if (conversion) {
+                    if (conversion.command === 'ban') {
+                        // Remove the ajail entry
+                        resultMap.delete(key);
+                        // Create a new ban entry
+                        const banKey = `${id}-ban`;
+                        if (!resultMap.has(banKey)) {
+                            resultMap.set(banKey, {
+                                id,
+                                command: 'ban',
+                                time: conversion.time,
+                                violations: [...existing.violations, {
+                                    reason: reason.trim(),
+                                    admin,
+                                    date
+                                }]
+                            });
+                        } else {
+                            const existingBan = resultMap.get(banKey);
+                            // Accumulate ban time instead of taking max
+                            existingBan.time += conversion.time;
+                            existingBan.violations = [...existingBan.violations, ...existing.violations, {
+                                reason: reason.trim(),
+                                admin,
+                                date
+                            }];
+                        }
+                    } else if (conversion.command === 'ajail') {
+                        // Update the ajail time to 90 and keep all violations
+                        existing.time = conversion.time;
+                        if (!existing.violations.some(v => 
+                            v.reason === reason.trim() && 
+                            v.admin === admin && 
+                            v.date === date
+                        )) {
+                            existing.violations.push({
+                                reason: reason.trim(),
+                                admin,
+                                date
+                            });
+                        }
+                    }
+                    continue;
+                }
+        }
+
+            // Apply time limits based on server rules
+            if (command === 'ajail' && newTime > rules.maxAjailTime) {
+                newTime = rules.maxAjailTime;
+            } else if (command === 'ban' && newTime > rules.maxBanTime) {
+                newTime = rules.maxBanTime;
+            } else if (command === 'hardban' && newTime > rules.maxHardbanTime) {
+                newTime = rules.maxHardbanTime;
+            }
+            
+            // Always use the accumulated time
+            existing.time = newTime;
+            
+            if (rules.combineSameViolations) {
+                // Check if this is a duplicate violation
+                const isDuplicate = existing.violations.some(v => 
+                    v.reason === reason.trim() && 
+                    v.admin === admin && 
+                    v.date === date
+                );
+                
+                if (!isDuplicate) {
+                    existing.violations.push({
+                        reason: reason.trim(),
+                        admin,
+                        date
+                    });
+                }
+            } else {
+                existing.violations.push({
+                    reason: reason.trim(),
+                    admin,
+                    date
+                });
+        }
+
+            // For Boston server, check if we need to convert to ban
+            if (selectedServer === 'Boston' && command === 'ajail') {
+                const conversion = rules.ajailToBan(existing.time, existing.violations);
+                if (conversion) {
+                    // Remove the ajail entry
+                    resultMap.delete(key);
+                    // Create a new ban entry
+                    const banKey = `${id}-ban`;
+                    if (!resultMap.has(banKey)) {
+                        // For new ban, time is equal to number of violations
+                        resultMap.set(banKey, {
+                            id,
+                            command: 'ban',
+                            time: Math.max(3, existing.violations.length),
+                            violations: existing.violations
+                        });
+                    } else {
+                        const existingBan = resultMap.get(banKey);
+                        // Sum existing ban time with conversion time
+                        existingBan.time += conversion.time;
+                        existingBan.violations = [...existingBan.violations, ...existing.violations];
+                    }
+                }
+            }
         }
     }
 
@@ -74,12 +292,9 @@ const punishStack = () => {
         return order.indexOf(a.command) - order.indexOf(b.command);
     });
 
-    // Add warn commands at the end
-    const allResults = [...sortedResults, ...warnCommands];
-
     // Display results
-    for (let i = 0; i < allResults.length; i++) {
-        const result = allResults[i];
+    for (let i = 0; i < sortedResults.length; i++) {
+        const result = sortedResults[i];
         
         let row = document.createElement('tr');
         row.className = 'table__row';
@@ -91,19 +306,36 @@ const punishStack = () => {
         // Format command with combined violations
         let commandText = `/${result.command} ${result.id} `;
         
-        if (result.command === 'unban') {
-            commandText += 'reban by talent';
-        } else if (result.command === 'warn') {
-            commandText += `${result.time} ${result.reason} by ${result.admin}`;
+        // For Boston server, format dates and rules
+        if (selectedServer === 'Boston' && result.command === 'ban') {
+            // Group violations by admin
+            const adminGroups = {};
+            result.violations.forEach(v => {
+                if (!adminGroups[v.admin]) {
+                    adminGroups[v.admin] = [];
+                }
+                adminGroups[v.admin].push(v);
+            });
+
+            // Format each admin's violations
+            const formattedViolations = [];
+            Object.entries(adminGroups).forEach(([admin, violations]) => {
+                // For each violation, keep it separate
+                violations.forEach(v => {
+                    const reasonWithoutDate = v.reason.replace(/\s*\([^)]+\)/, '').trim();
+                    const date = v.reason.match(/\(([^)]+)\)/)?.[1] || '';
+                    formattedViolations.push(`${reasonWithoutDate} (${date}) by ${admin}`);
+                });
+            });
+
+            commandText += `${result.time} ${formattedViolations.join(', ')}`;
         } else {
-            commandText += `${result.time} `;
-            
             // Combine violations
             const violationTexts = result.violations.map(v => {
-                const reasonWithoutDate = v.reason.replace(/\s*\([^)]+\)/, '');
-                return `${reasonWithoutDate} (${v.date}) by ${v.admin}`;
+                const reasonWithoutDate = v.reason.replace(/\s*\([^)]+\)/, '').trim();
+                return v.date ? `${reasonWithoutDate} (${v.date}) by ${v.admin}` : `${reasonWithoutDate} by ${v.admin}`;
             });
-            commandText += violationTexts.join(', ');
+            commandText += `${result.time} ${violationTexts.join(', ')}`;
         }
         
         cell.textContent = commandText;
@@ -129,7 +361,7 @@ const punishStack = () => {
     
     resultsHeader.appendChild(copyAllButton);
 
-    if (allResults.length > 0) {
+    if (sortedResults.length > 0) {
         copyButton.style.display = '';
         setTimeout(() => {
             resultsContainer.classList.add('visible');
