@@ -125,8 +125,8 @@ body {
 }
 
 .stacker__punish:focus {
-    border-color: #fd1b54;
-    box-shadow: 0 0 0 2px rgba(253, 27, 84, 0.2);
+    border-color: #5865F2;
+    box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2);
 }
 
 .stacker__controls {
@@ -163,8 +163,8 @@ body {
 
 .resize-button:hover {
     background: #4c4c4c !important;
-    border-color: #fd1b54 !important;
-    box-shadow: 0 0 10px rgba(253, 27, 84, 0.3) !important;
+    border-color: #5865F2 !important;
+    box-shadow: 0 0 10px rgba(88, 101, 242, 0.3) !important;
 }
 
 .resize-button:hover::after {
@@ -187,12 +187,12 @@ body {
 .resize-button svg {
     width: 16px !important;
     height: 16px !important;
-    stroke: #fd1b54 !important;
+    stroke: #5865F2 !important;
     fill: none !important;
 }
 
 .stacker__button {
-    background: linear-gradient(135deg, #fd1b54 0%, #d41545 100%);
+    background: linear-gradient(135deg, #5865F2 0%, #4051b5 100%);
     color: #fff;
     border: none;
     width: 100%;
@@ -207,7 +207,7 @@ body {
 
 .stacker__button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(253, 27, 84, 0.3);
+    box-shadow: 0 4px 15px rgba(88, 101, 242, 0.3);
 }
 
 .stacker__button:active {
@@ -230,8 +230,8 @@ body {
 
 .clear-button:hover {
     background: #4c4c4c;
-    border-color: #fd1b54;
-    box-shadow: 0 0 10px rgba(253, 27, 84, 0.3);
+    border-color: #5865F2;
+    box-shadow: 0 0 10px rgba(88, 101, 242, 0.3);
 }
 
 .clear-button:hover::after {
@@ -254,7 +254,7 @@ body {
 .clear-button svg {
     width: 16px;
     height: 16px;
-    stroke: #fd1b54;
+    stroke: #5865F2;
 }
 
 .stacker__results {
@@ -341,7 +341,7 @@ body {
     padding: 15px;
     text-align: center;
     font-weight: 700;
-    border-bottom: 2px solid #fd1b54;
+    border-bottom: 2px solid #5865F2;
 }
 
 .table__row {
@@ -560,7 +560,7 @@ body {
 
 .error-block {
     background: #232326;
-    border: 1.5px solid #fd1b5433;
+    border: 1.5px solid #5865F233;
     border-radius: 8px;
     padding: 16px 18px 10px 18px;
     margin: 10px 0;
@@ -570,7 +570,7 @@ body {
     position: relative;
 }
 .error-block .error-caption {
-    color: #fd1b54;
+    color: #5865F2;
     font-size: 13px;
     margin-bottom: 8px;
     display: block;
@@ -591,10 +591,10 @@ body {
     opacity: 0.92;
 }
 .error-line:hover {
-    background: #fd1b54;
+    background: #5865F2;
     color: #fff;
-    box-shadow: 0 2px 8px #fd1b5440;
-    border-color: #fd1b54;
+    box-shadow: 0 2px 8px #5865F240;
+    border-color: #5865F2;
     opacity: 1;
 }
 .error-line::before {
@@ -603,7 +603,7 @@ body {
     left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    color: #fd1b54;
+    color: #5865F2;
     font-size: 18px;
     opacity: 0.8;
     transition: color 0.2s;

@@ -166,8 +166,6 @@ const punishStack = () => {
         // Отображение результатов
         for (let i = 0; i < resultArr.length; i++) {
             let { id, punish, time, name } = resultArr[i];
-            let plural = name.length === 1 ? 'Жалоба' : 'Жалобы';
-            
             let row = document.createElement('tr');
             row.className = 'table__row';
             row.style.opacity = '0';
@@ -176,9 +174,9 @@ const punishStack = () => {
             let cell = document.createElement('td');
             let commandText = '';
             if (punish === 'warn' || punish === '/warn') {
-                commandText = `/${punish} ${id} ${plural} ${name.join(', ')}`;
+                commandText = `/${punish} ${id} ${name.join(', ')}`;
             } else {
-                commandText = `/${punish} ${id} ${punish === '/gunban' ? 'бесконечно' : time.toString()} ${plural} ${name.join(', ')}`;
+                commandText = `/${punish} ${id} ${punish === '/gunban' ? 'бесконечно' : time.toString()} ${name.join(', ')}`;
             }
             cell.textContent = commandText;
             row.appendChild(cell);
@@ -278,7 +276,7 @@ const showError = (message) => {
                     const line = match[1];
                     return `<div class="error-line" data-line="${line}">${err.replace(/\n/g,'<br>')}</div>`;
                 }
-                return `<div style="color:#fd1b54;text-align:left;padding:8px 0;">${err.replace(/\n/g,'<br>')}</div>`;
+                return `<div style="color:#fff;text-align:left;padding:8px 0;">${err.replace(/\n/g,'<br>')}</div>`;
             }).join('') +
             `</div>`;
     } else {
@@ -291,7 +289,7 @@ const showError = (message) => {
                 <div class="error-line" data-line="${line}">${message.replace(/\n/g,'<br>')}</div>
             </div>`;
         } else {
-            html = `<div class='error-block'><div style="color:#fd1b54;text-align:left;padding:8px 0;">${message.replace(/\n/g,'<br>')}</div></div>`;
+            html = `<div class='error-block'><div style="color:#fff;text-align:left;padding:8px 0;">${message.replace(/\n/g,'<br>')}</div></div>`;
         }
     }
     resultTable.innerHTML = `<tr class="table__row error-row"><td>${html}</td></tr>`;
