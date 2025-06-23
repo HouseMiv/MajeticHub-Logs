@@ -1,376 +1,214 @@
 const punishStack = () => {
+    // Получаем все необходимые элементы
     const field = document.getElementById('id_punishField');
     const resultTable = document.getElementById('id_resultTable');
     const resultsContainer = document.getElementById('id_resultsContainer');
-    const copyButton = document.querySelector('.copy-button');
     const resultsCase = document.querySelector('.results-case');
-    const serverSelect = document.getElementById('id_serverSelect');
+    const resultsHeader = document.querySelector('.results__header');
     
+    // Очищаем предыдущие результаты
     resultTable.innerHTML = '';
+    resultsContainer.classList.remove('visible');
+    resultsCase.classList.remove('visible');
+    resultsHeader.innerHTML = '';
     
+    // Проверяем ввод
     if (!field.value.trim()) {
-        copyButton.style.display = 'none';
-        resultsContainer.classList.remove('visible');
-        resultsCase.classList.remove('visible');
         showError('Пожалуйста, введите данные');
         return;
     }
 
-    // Parse input commands
-    const lines = field.value.trim().split('\n');
-    const resultMap = new Map();
-    const selectedServer = serverSelect.value;
+    try {
+        const regex = /(?:(?:ID|PUNISH|TIME|NAME):[^;]*;){4}/gm;
+        let m, result = '';
+        let errors = [];
 
-    // Server-specific rules
-    const serverRules = {
-        'New York': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Detroit': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Chicago': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'San Francisco': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Atlanta': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Los Angeles': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Miami': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Las Vegas': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Washington': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        },
-        'Boston': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: (time, violations) => {
-                if (time >= 120) {
-                    // For Boston server, when total ajail time >= 120,
-                    // ban time is equal to number of violations
-                    const banTime = Math.max(3, violations.length);
-                    return { command: 'ban', time: banTime };
-                }
-                return null;
+        // Проверяем каждую строку
+        const lines = field.value.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line || /^-+$/.test(line)) continue;
+            
+            if (!line.includes('ID:')) {
+                errors.push(`Ошибка в строке ${i + 1}: отсутствует поле ID\nСтрока: "${line}"`);
             }
-        },
-        'Houston': {
-            maxAjailTime: 90,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: (time) => {
-                if (time >= 105 && time <= 125) return { command: 'ban', time: 3 };
-                if (time >= 126 && time <= 135) return { command: 'ban', time: 4 };
-                if (time >= 136 && time <= 150) return { command: 'ban', time: 5 };
-                if (time >= 151 && time <= 165) return { command: 'ban', time: 6 };
-                if (time > 165) {
-                    // Calculate additional days: every 15 minutes over 165 adds 1 day
-                    const additionalDays = Math.floor((time - 165) / 15);
-                    return { command: 'ban', time: 6 + additionalDays };
-                }
-                if (time >= 100) return { command: 'ajail', time: 90 };
-                return null;
-        }
-        },
-        'Seattle': {
-            maxAjailTime: 720,
-            maxBanTime: 9999,
-            maxHardbanTime: 9999,
-            combineSameViolations: true,
-            ajailToBan: null
-        }
-    };
-
-    for (const line of lines) {
-        if (!line.trim()) continue;
-
-        const match = line.match(/^\/(\w+)\s+(\d+)\s+(\d+)\s+(.+?)\s+by\s+(\w+)/);
-        if (!match) continue;
-
-        const [_, command, id, time, reason, admin] = match;
-        const date = reason.match(/\(([^)]+)\)/)?.[1] || '';
-        
-        // Check if the violation is for the selected server
-
-        // Get server-specific rules
-        const rules = selectedServer === 'all' ? serverRules['New York'] : serverRules[selectedServer];
-        
-        const key = `${id}-${command}`;
-        if (!resultMap.has(key)) {
-            resultMap.set(key, {
-                id,
-                command,
-                time: parseInt(time),
-                violations: [{
-                    reason: reason.trim(),
-                    admin,
-                    date
-                }]
-            });
-        } else {
-            const existing = resultMap.get(key);
+            if (!line.includes('PUNISH:')) {
+                errors.push(`Ошибка в строке ${i + 1}: отсутствует поле PUNISH\nСтрока: "${line}"`);
+            }
+            if (!line.includes('NAME:')) {
+                errors.push(`Ошибка в строке ${i + 1}: отсутствует поле NAME\nСтрока: "${line}"`);
+            }
             
-            // Apply server-specific time limits
-            let newTime = existing.time + parseInt(time);
+            const idMatch = line.match(/ID:([^;]*);/);
+            if (idMatch && !idMatch[1].trim()) {
+                errors.push(`Ошибка в строке ${i + 1}: пустое значение ID\nСтрока: "${line}"`);
+            }
             
-            // Get server-specific rules
-            const rules = selectedServer === 'all' ? serverRules['New York'] : serverRules[selectedServer];
+            const punishMatch = line.match(/PUNISH:([^;]*);/);
+            if (punishMatch && !punishMatch[1].trim()) {
+                errors.push(`Ошибка в строке ${i + 1}: пустое значение PUNISH\nСтрока: "${line}"`);
+            }
             
-            // Special handling for Houston server
-            if (selectedServer === 'Houston' && command === 'ajail') {
-                // Apply Houston rules to individual times
-                const currentTime = parseInt(time);
-                const existingTime = existing.time;
-                
-                // First sum the times
-                newTime = existingTime + currentTime;
-                
-                // Check if we need to convert to ban
-                const conversion = rules.ajailToBan(newTime);
-                if (conversion) {
-                    if (conversion.command === 'ban') {
-                        // Remove the ajail entry
-                        resultMap.delete(key);
-                        // Create a new ban entry
-                        const banKey = `${id}-ban`;
-                        if (!resultMap.has(banKey)) {
-                            resultMap.set(banKey, {
-                                id,
-                                command: 'ban',
-                                time: conversion.time,
-                                violations: [...existing.violations, {
-                                    reason: reason.trim(),
-                                    admin,
-                                    date
-                                }]
-                            });
-                        } else {
-                            const existingBan = resultMap.get(banKey);
-                            // Accumulate ban time instead of taking max
-                            existingBan.time += conversion.time;
-                            existingBan.violations = [...existingBan.violations, ...existing.violations, {
-                                reason: reason.trim(),
-                                admin,
-                                date
-                            }];
-                        }
-                    } else if (conversion.command === 'ajail') {
-                        // Update the ajail time to 90 and keep all violations
-                        existing.time = conversion.time;
-                        if (!existing.violations.some(v => 
-                            v.reason === reason.trim() && 
-                            v.admin === admin && 
-                            v.date === date
-                        )) {
-                            existing.violations.push({
-                                reason: reason.trim(),
-                                admin,
-                                date
-                            });
-                        }
+            const nameMatch = line.match(/NAME:([^;]*);/);
+            if (nameMatch && !nameMatch[1].trim()) {
+                errors.push(`Ошибка в строке ${i + 1}: пустое значение NAME\nСтрока: "${line}"`);
+            }
+            
+            if (punishMatch) {
+                const punish = punishMatch[1].trim();
+                if (punish !== 'warn' && punish !== '/warn') {
+                    const timeMatch = line.match(/TIME:([^;]*);/);
+                    if (!timeMatch || !timeMatch[1].trim()) {
+                        errors.push(`Ошибка в строке ${i + 1}: отсутствует или пустое значение TIME для наказания ${punish}\nСтрока: "${line}"`);
                     }
-                    continue;
                 }
+            }
         }
 
-            // Apply time limits based on server rules
-            if (command === 'ajail' && newTime > rules.maxAjailTime) {
-                newTime = rules.maxAjailTime;
-            } else if (command === 'ban' && newTime > rules.maxBanTime) {
-                newTime = rules.maxBanTime;
-            } else if (command === 'hardban' && newTime > rules.maxHardbanTime) {
-                newTime = rules.maxHardbanTime;
+        if (errors.length > 0) {
+            showError(errors.join('\n\n'));
+            return;
+        }
+
+        // Обработка данных
+        while ((m = regex.exec(field.value)) !== null) {
+            if (m.index === regex.lastIndex) {
+                regex.lastIndex++;
             }
-            
-            // Always use the accumulated time
-            existing.time = newTime;
-            
-            if (rules.combineSameViolations) {
-                // Check if this is a duplicate violation
-                const isDuplicate = existing.violations.some(v => 
-                    v.reason === reason.trim() && 
-                    v.admin === admin && 
-                    v.date === date
-                );
-                
-                if (!isDuplicate) {
-                    existing.violations.push({
-                        reason: reason.trim(),
-                        admin,
-                        date
-                    });
+            m.forEach((match) => {
+                if (!match.match(/ID:;PUNISH:;TIME:;NAME:;/)) {
+                    result += match;
                 }
+            });
+        }
+
+        if (!result) {
+            showError('Неверный формат данных. Проверьте, что все строки имеют правильный формат:\nID:значение;PUNISH:значение;TIME:значение;NAME:значение;');
+            return;
+        }
+
+        // Парсинг и обработка данных
+        let fieldArr = result.split(';').filter(Boolean);
+        let idArr = [];
+        let punishArr = [];
+        let timeArr = [];
+        let nameArr = [];
+        let resultArr = [];
+
+        for (let i = 0; i < fieldArr.length; i++) {
+            if (fieldArr[i].includes('ID:')) {
+                const id = fieldArr[i].split(':')[1]?.trim();
+                if (id) idArr.push(fieldArr[i]);
+            }
+            else if (fieldArr[i].includes('PUNISH:')) {
+                const punish = fieldArr[i].split(':')[1]?.trim();
+                if (punish) punishArr.push(fieldArr[i]);
+            }
+            else if (fieldArr[i].includes('TIME:')) timeArr.push(fieldArr[i]);
+            else if (fieldArr[i].includes('NAME:')) {
+                const name = fieldArr[i].split(':')[1]?.trim();
+                if (name) nameArr.push(fieldArr[i]);
+            }
+        }
+
+        if (idArr.length !== punishArr.length || idArr.length !== nameArr.length) {
+            showError('Неверный формат данных');
+            return;
+        }
+
+        // Обработка наказаний
+        for (let i = 0; i < idArr.length; i++) {
+            let id = idArr[i].split(':')[1]?.trim();
+            let punish = punishArr[i].split(':')[1]?.trim();
+            let time = timeArr[i]?.split(':')[1]?.trim();
+            time = time ? Math.floor(parseInt(time)) : null;
+
+            if (!id || !punish) continue;
+
+            const timeLimits = {
+                '/ajail': 720,
+                '/mute': 720,
+                '/ban': 9999,
+                '/hardban': 9999,
+                '/gunban': 9999
+            };
+
+            if (timeLimits[punish]) {
+                time = Math.min(Math.max(1, time || 0), timeLimits[punish]);
+            }
+
+            if (punish === 'warn' || punish === '/warn') {
+                resultArr.push({ id, punish, time: null, name: [nameArr[i].split(':')[1]?.trim()] });
+                continue;
+            }
+
+            let index = resultArr.findIndex(item => item.id === id && item.punish === punish);
+
+            if (index !== -1) {
+                const newTime = (resultArr[index].time || 0) + (time || 0);
+                resultArr[index].time = timeLimits[punish] ? Math.min(newTime, timeLimits[punish]) : newTime;
+                resultArr[index].name.push(nameArr[i].split(':')[1]?.trim());
             } else {
-                existing.violations.push({
-                    reason: reason.trim(),
-                    admin,
-                    date
-                });
-        }
-
-            // For Boston server, check if we need to convert to ban
-            if (selectedServer === 'Boston' && command === 'ajail') {
-                const conversion = rules.ajailToBan(existing.time, existing.violations);
-                if (conversion) {
-                    // Remove the ajail entry
-                    resultMap.delete(key);
-                    // Create a new ban entry
-                    const banKey = `${id}-ban`;
-                    if (!resultMap.has(banKey)) {
-                        // For new ban, time is equal to number of violations
-                        resultMap.set(banKey, {
-                            id,
-                            command: 'ban',
-                            time: Math.max(3, existing.violations.length),
-                            violations: existing.violations
-                        });
-                    } else {
-                        const existingBan = resultMap.get(banKey);
-                        // Sum existing ban time with conversion time
-                        existingBan.time += conversion.time;
-                        existingBan.violations = [...existingBan.violations, ...existing.violations];
-                    }
-                }
+                resultArr.push({ id, punish, time, name: [nameArr[i].split(':')[1]?.trim()] });
             }
         }
-    }
 
-    // Sort and format results
-    const order = ['ban', 'hardban', 'ajail'];
-    const sortedResults = Array.from(resultMap.values()).sort((a, b) => {
-        if (a.command === b.command) {
-            return b.time - a.time;
+        // Сортировка результатов
+        const order = ['ajail', 'ban', 'hardban', 'gunban', 'mute', 'warn'];
+        resultArr.sort((a, b) => {
+            if (a.punish === 'ajail' && b.punish === 'ajail') {
+                return b.time - a.time;
+            } else {
+                return order.indexOf(a.punish) - order.indexOf(b.punish);
+            }
+        });
+
+        // Отображение результатов
+        for (let i = 0; i < resultArr.length; i++) {
+            let { id, punish, time, name } = resultArr[i];
+            let plural = name.length === 1 ? 'Жалоба' : 'Жалобы';
+            
+            let row = document.createElement('tr');
+            row.className = 'table__row';
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(20px)';
+            
+            let cell = document.createElement('td');
+            let commandText = '';
+            if (punish === 'warn' || punish === '/warn') {
+                commandText = `/${punish} ${id} ${plural} ${name.join(', ')}`;
+            } else {
+                commandText = `/${punish} ${id} ${punish === '/gunban' ? 'бесконечно' : time.toString()} ${plural} ${name.join(', ')}`;
+            }
+            cell.textContent = commandText;
+            row.appendChild(cell);
+            resultTable.appendChild(row);
+            
+            setTimeout(() => {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, i * 100);
         }
-        return order.indexOf(a.command) - order.indexOf(b.command);
-    });
 
-    // Display results
-    for (let i = 0; i < sortedResults.length; i++) {
-        const result = sortedResults[i];
+        // Добавляем кнопку копирования
+        const copyAllButton = document.createElement('button');
+        copyAllButton.className = 'copy-all-button';
+        copyAllButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Копировать все';
+        copyAllButton.title = 'Копировать все наказания';
+        copyAllButton.onclick = copyAllPunishments;
         
-        let row = document.createElement('tr');
-        row.className = 'table__row';
-        row.style.opacity = '0';
-        row.style.transform = 'translateY(20px)';
-        
-        let cell = document.createElement('td');
-        
-        // Format command with combined violations
-        let commandText = `/${result.command} ${result.id} `;
-        
-        // For Boston server, format dates and rules
-        if (selectedServer === 'Boston' && result.command === 'ban') {
-            // Group violations by admin
-            const adminGroups = {};
-            result.violations.forEach(v => {
-                if (!adminGroups[v.admin]) {
-                    adminGroups[v.admin] = [];
-                }
-                adminGroups[v.admin].push(v);
-            });
+        resultsHeader.appendChild(copyAllButton);
 
-            // Format each admin's violations
-            const formattedViolations = [];
-            Object.entries(adminGroups).forEach(([admin, violations]) => {
-                // For each violation, keep it separate
-                violations.forEach(v => {
-                    const reasonWithoutDate = v.reason.replace(/\s*\([^)]+\)/, '').trim();
-                    const date = v.reason.match(/\(([^)]+)\)/)?.[1] || '';
-                    formattedViolations.push(`${reasonWithoutDate} (${date}) by ${admin}`);
-                });
-            });
-
-            commandText += `${result.time} ${formattedViolations.join(', ')}`;
-        } else {
-            // Combine violations
-            const violationTexts = result.violations.map(v => {
-                const reasonWithoutDate = v.reason.replace(/\s*\([^)]+\)/, '').trim();
-                return v.date ? `${reasonWithoutDate} (${v.date}) by ${v.admin}` : `${reasonWithoutDate} by ${v.admin}`;
-            });
-            commandText += `${result.time} ${violationTexts.join(', ')}`;
-        }
-        
-        cell.textContent = commandText;
-        row.appendChild(cell);
-        resultTable.appendChild(row);
-        
-        setTimeout(() => {
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '1';
-            row.style.transform = 'translateY(0)';
-        }, i * 100);
-    }
-
-    // Add copy all button
-    const resultsHeader = document.querySelector('.results__header');
-    resultsHeader.innerHTML = "";
-
-    const copyAllButton = document.createElement('button');
-    copyAllButton.className = 'copy-all-button';
-    copyAllButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Копировать все';
-    copyAllButton.title = 'Копировать все наказания';
-    copyAllButton.onclick = copyAllPunishments;
-    
-    resultsHeader.appendChild(copyAllButton);
-
-    if (sortedResults.length > 0) {
-        copyButton.style.display = '';
-        setTimeout(() => {
+        // Показываем результаты
+        if (resultArr.length > 0) {
             resultsContainer.classList.add('visible');
             resultsCase.classList.add('visible');
-        }, 100);
-    } else {
-        copyButton.style.display = 'none';
-        resultsContainer.classList.remove('visible');
-        resultsCase.classList.remove('visible');
+        }
+
+    } catch (error) {
+        console.error('Ошибка при обработке:', error);
+        showError('Произошла ошибка при обработке данных. Пожалуйста, проверьте формат ввода.');
     }
 };
 
@@ -429,14 +267,105 @@ const showError = (message) => {
     const resultsContainer = document.getElementById('id_resultsContainer');
     const resultsCase = document.querySelector('.results-case');
     
-    resultTable.innerHTML = `<tr class="table__row error-row"><td style="color: #fd1b54; text-align: center;">${message}</td></tr>`;
+    let html = '';
+    const errorLines = message.split(/\n\n/);
+    if (errorLines.length > 1) {
+        html = `<div class='error-block'>
+            <span class='error-caption'>Нажмите на ошибку, чтобы перейти к строке</span>` +
+            errorLines.map(err => {
+                const match = err.match(/строке (\d+)/i);
+                if (match) {
+                    const line = match[1];
+                    return `<div class="error-line" data-line="${line}">${err.replace(/\n/g,'<br>')}</div>`;
+                }
+                return `<div style="color:#fd1b54;text-align:left;padding:8px 0;">${err.replace(/\n/g,'<br>')}</div>`;
+            }).join('') +
+            `</div>`;
+    } else {
+        // Если одна ошибка и есть номер строки — делаем её кликабельной
+        const match = message.match(/строке (\d+)/i);
+        if (match) {
+            const line = match[1];
+            html = `<div class='error-block'>
+                <span class='error-caption'>Нажмите на ошибку, чтобы перейти к строке</span>
+                <div class="error-line" data-line="${line}">${message.replace(/\n/g,'<br>')}</div>
+            </div>`;
+        } else {
+            html = `<div class='error-block'><div style="color:#fd1b54;text-align:left;padding:8px 0;">${message.replace(/\n/g,'<br>')}</div></div>`;
+        }
+    }
+    resultTable.innerHTML = `<tr class="table__row error-row"><td>${html}</td></tr>`;
     
-    setTimeout(() => {
-        resultsContainer.classList.add('visible');
-        resultsCase.classList.add('visible');
-    }, 100);
+    // Показываем блок результатов с ошибкой
+    resultsContainer.classList.add('visible');
+    resultsCase.classList.add('visible');
+
+    // Добавляем обработчик клика по ошибке
+    document.querySelectorAll('.error-line').forEach(el => {
+        el.addEventListener('click', function() {
+            const line = parseInt(this.getAttribute('data-line'), 10);
+            const textarea = document.getElementById('id_punishField');
+            if (!textarea || isNaN(line)) return;
+            const lines = textarea.value.split('\n');
+            let pos = 0;
+            for (let i = 0; i < line - 1 && i < lines.length; i++) {
+                pos += lines[i].length + 1; // +1 for \n
+            }
+            textarea.focus();
+            textarea.setSelectionRange(pos, pos);
+            // Прокрутка
+            const lineHeight = textarea.scrollHeight / lines.length;
+            textarea.scrollTop = (line - 1) * lineHeight - textarea.clientHeight / 2 + lineHeight;
+        });
+    });
 };
 
+const autoResizeTextarea = (element) => {
+    element.style.height = 'auto';
+    element.style.height = (element.scrollHeight) + 'px';
+};
+
+const clearInput = () => {
+    const field = document.getElementById('id_punishField');
+    field.value = '';
+    autoResizeTextarea(field);
+    const resultsContainer = document.getElementById('id_resultsContainer');
+    const resultsCase = document.querySelector('.results-case');
+    const copyButton = document.querySelector('.copy-button');
+    resultsContainer.classList.remove('visible');
+    resultsCase.classList.remove('visible');
+    copyButton.style.display = 'none';
+};
+
+const toggleTextareaSize = () => {
+    const textarea = document.getElementById('id_punishField');
+    const resizeButton = document.querySelector('.resize-button');
+    
+    if (textarea.style.height && textarea.style.height !== '100px') {
+        // Возвращаем к минимальному размеру
+        textarea.style.height = '100px';
+    } else {
+        // Временно убираем ограничение высоты для расчета полной высоты текста
+        textarea.style.height = 'auto';
+        const scrollHeight = textarea.scrollHeight;
+        // Устанавливаем новую высоту
+        textarea.style.height = `${scrollHeight}px`;
+    }
+};
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    const textarea = document.getElementById('id_punishField');
+    const resizeButton = document.querySelector('.resize-button');
+    
+    // Устанавливаем начальную высоту
+    textarea.style.height = '100px';
+    
+    // Добавляем только обработчик для кнопки расширения
+    resizeButton.addEventListener('click', toggleTextareaSize);
+});
+
+// Добавляем обработчик нажатия Enter в поле ввода
 document.getElementById('id_punishField').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         punishStack();
@@ -452,3 +381,26 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }, 1500);
 });
+
+function updateLineNumbers() {
+    const textarea = document.getElementById('id_punishField');
+    const lineNumbers = document.getElementById('lineNumbers');
+    if (!textarea || !lineNumbers) return;
+    const lines = textarea.value.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= lines; i++) {
+        html += i + '<br>';
+    }
+    lineNumbers.innerHTML = html;
+}
+
+// Обновлять номера строк при вводе
+const punishField = document.getElementById('id_punishField');
+if (punishField) {
+    punishField.addEventListener('input', updateLineNumbers);
+    punishField.addEventListener('scroll', function() {
+        document.getElementById('lineNumbers').scrollTop = punishField.scrollTop;
+    });
+    // Инициализация при загрузке
+    updateLineNumbers();
+}

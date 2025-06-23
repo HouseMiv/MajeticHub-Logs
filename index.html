@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MajesticHUB Logs - Инструмент для логеров" />
+    <meta name="description" content="MajesticHUB Forum - Инструмент для модерации форума" />
     <meta name="theme-color" content="#1a1a1a" />
-    <title>MajesticHUB Logs</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <title>MajesticHUB Forum</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -37,34 +37,38 @@
         <main class="content">
             <div class="content__body">
                 <div class="content__case stacker">
-                    <div class="server-select-container">
-                        <select id="id_serverSelect" class="server-select">
-                            <option value="all">Выбор сервера</option>
-                            <option value="New York">New York</option>
-                            <option value="Detroit">Detroit</option>
-                            <option value="Chicago">Chicago</option>
-                            <option value="San Francisco">San Francisco</option>
-                            <option value="Atlanta">Atlanta</option>
-                            <option value="Los Angeles">Los Angeles</option>
-                            <option value="Miami">Miami</option>
-                            <option value="Las Vegas">Las Vegas</option>
-                            <option value="Washington">Washington</option>
-                            <option value="Boston">Boston</option>
-                            <option value="Houston">Houston</option>
-                            <option value="Seattle">Seattle</option>
-                        </select>
-                    </div>
-                    <div class="input-container">
-                        <textarea
-                            name="name_punishField" 
-                            id="id_punishField" 
-                            class="stacker__punish punish-field" 
-                            placeholder="Введите данные для стака наказаний"
-                            spellcheck="false"
-                        ></textarea>
+                    <table class="stacker__data table" id="id_dataTable">
+                        <thead>
+                            <tr class="table__row">
+                                <th class="table__header">ID</th>
+                                <th class="table__header">Наказание(PUNISH)</th>
+                                <th class="table__header">Время(TIME)</th>
+                                <th class="table__header">Пункт правил(NAME)</th>
+                            </tr>
+                        </thead>
+                    </table>
+                    <div class="textarea-wrapper">
+                        <div class="line-numbers" id="lineNumbers"></div>
+                    <textarea
+                        name="name_punishField" 
+                        id="id_punishField" 
+                        class="stacker__punish" 
+                        placeholder="Введите данные из столбца 'Punish List'"
+                        spellcheck="false"
+                    ></textarea>
                     </div>
                     <div class="stacker__controls">
-                        <button onclick="punishStack()" class="stacker__button">Обработать</button>
+                        <button onclick="punishStack()" class="stacker__button process-button">ОБРАБОТАТЬ</button>
+                        <button class="stacker__button resize-button" title="Изменить размер поля">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 3H3v18h18V3zM7 7h10M7 12h10M7 17h10"/>
+                            </svg>
+                        </button>
+                        <button onclick="clearInput()" class="stacker__button clear-button" title="Очистить поле ввода">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+                            </svg>
+                        </button>
                     </div>
                 </div> 
                 <div class="content__case stacker results-case">
