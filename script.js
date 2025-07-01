@@ -166,22 +166,22 @@ const punishStack = () => {
         // Отображение результатов
         for (let i = 0; i < resultArr.length; i++) {
             let { id, punish, time, name } = resultArr[i];
+            // Удаляем дубликаты NAME
+            let uniqueNames = [...new Set(name)];
             let row = document.createElement('tr');
             row.className = 'table__row';
             row.style.opacity = '0';
             row.style.transform = 'translateY(20px)';
-            
             let cell = document.createElement('td');
             let commandText = '';
             if (punish === 'warn' || punish === '/warn') {
-                commandText = `/${punish} ${id} ${name.join(', ')}`;
+                commandText = `/${punish} ${id} ${uniqueNames.join(', ')}`;
             } else {
-                commandText = `/${punish} ${id} ${punish === '/gunban' ? 'бесконечно' : time.toString()} ${name.join(', ')}`;
+                commandText = `/${punish} ${id} ${punish === '/gunban' ? 'бесконечно' : time.toString()} ${uniqueNames.join(', ')}`;
             }
             cell.textContent = commandText;
             row.appendChild(cell);
             resultTable.appendChild(row);
-            
             setTimeout(() => {
                 row.style.transition = 'all 0.3s ease';
                 row.style.opacity = '1';
