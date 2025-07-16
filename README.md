@@ -41,7 +41,7 @@ ID:136548;PUNISH:ajail;TIME:40;NAME:1.3 ПГО (ИРП) by Verum;
 - JavaScript (валидация, генерация таблиц, preloader)
 
 ## Использование
-1. Перейдите по [ссылке](https://housemiv.github.io/MajeticHub-Forum/)
+1. Перейдите по [ссылке](https://housemiv.github.io/MajeticHub-Logs/)
 2. Введите данные из столбца "Punish List" в соответствующее текстовое поле.
 3. Нажмите кнопку "Выполнить".
 4. Результаты обработки данных будут отображены в виде таблицы ниже.
