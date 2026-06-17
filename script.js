@@ -1,18 +1,32 @@
+const updateResultsCount = (count) => {
+    const el = document.getElementById('resultsCount');
+    if (el) el.textContent = count;
+};
+
+const resetResultsHeader = () => {
+    const resultsHeader = document.querySelector('.results__header');
+    if (!resultsHeader) return;
+    resultsHeader.innerHTML = `
+        <span class="results__title">Команды <span class="results__count" id="resultsCount">0</span></span>
+        <button onclick="copyAllPunishments()" class="copy-all-button" title="Копировать результат">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Копировать результат
+        </button>
+    `;
+};
+
 const punishStack = () => {
-    // Получаем все необходимые элементы
     const field = document.getElementById('id_punishField');
     const resultTable = document.getElementById('id_resultTable');
     const resultsContainer = document.getElementById('id_resultsContainer');
     const resultsCase = document.querySelector('.results-case');
-    const resultsHeader = document.querySelector('.results__header');
-    
-    // Очищаем предыдущие результаты
+
     resultTable.innerHTML = '';
     resultsContainer.classList.remove('visible');
     resultsCase.classList.remove('visible');
-    resultsHeader.innerHTML = '';
-    
-    // Проверяем ввод
+    resetResultsHeader();
+    updateResultsCount(0);
+
     if (!field.value.trim()) {
         showError('Пожалуйста, введите данные');
         return;
@@ -23,12 +37,11 @@ const punishStack = () => {
         let m, result = '';
         let errors = [];
 
-        // Проверяем каждую строку
         const lines = field.value.split('\n');
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line || /^-+$/.test(line)) continue;
-            
+
             if (!line.includes('ID:')) {
                 errors.push(`Ошибка в строке ${i + 1}: отсутствует поле ID\nСтрока: "${line}"`);
             }
@@ -38,22 +51,22 @@ const punishStack = () => {
             if (!line.includes('NAME:')) {
                 errors.push(`Ошибка в строке ${i + 1}: отсутствует поле NAME\nСтрока: "${line}"`);
             }
-            
+
             const idMatch = line.match(/ID:([^;]*);/);
             if (idMatch && !idMatch[1].trim()) {
                 errors.push(`Ошибка в строке ${i + 1}: пустое значение ID\nСтрока: "${line}"`);
             }
-            
+
             const punishMatch = line.match(/PUNISH:([^;]*);/);
             if (punishMatch && !punishMatch[1].trim()) {
                 errors.push(`Ошибка в строке ${i + 1}: пустое значение PUNISH\nСтрока: "${line}"`);
             }
-            
+
             const nameMatch = line.match(/NAME:([^;]*);/);
             if (nameMatch && !nameMatch[1].trim()) {
                 errors.push(`Ошибка в строке ${i + 1}: пустое значение NAME\nСтрока: "${line}"`);
             }
-            
+
             if (punishMatch) {
                 const punish = punishMatch[1].trim();
                 if (punish !== 'warn' && punish !== '/warn') {
@@ -70,7 +83,6 @@ const punishStack = () => {
             return;
         }
 
-        // Обработка данных
         while ((m = regex.exec(field.value)) !== null) {
             if (m.index === regex.lastIndex) {
                 regex.lastIndex++;
@@ -87,7 +99,6 @@ const punishStack = () => {
             return;
         }
 
-        // Парсинг и обработка данных
         let fieldArr = result.split(';').filter(Boolean);
         let idArr = [];
         let punishArr = [];
@@ -116,7 +127,6 @@ const punishStack = () => {
             return;
         }
 
-        // Обработка наказаний
         for (let i = 0; i < idArr.length; i++) {
             let id = idArr[i].split(':')[1]?.trim();
             let punish = punishArr[i].split(':')[1]?.trim();
@@ -153,25 +163,23 @@ const punishStack = () => {
             }
         }
 
-        // Сортировка результатов
         const order = ['ajail', 'ban', 'hardban', 'gunban', 'mute', 'warn'];
         resultArr.sort((a, b) => {
             if (a.punish === 'ajail' && b.punish === 'ajail') {
                 return b.time - a.time;
-            } else {
-                return order.indexOf(a.punish) - order.indexOf(b.punish);
             }
+            return order.indexOf(a.punish) - order.indexOf(b.punish);
         });
 
-        // Отображение результатов
         for (let i = 0; i < resultArr.length; i++) {
             let { id, punish, time, name } = resultArr[i];
-            // Удаляем дубликаты NAME
             let uniqueNames = [...new Set(name)];
+
             let row = document.createElement('tr');
             row.className = 'table__row';
             row.style.opacity = '0';
             row.style.transform = 'translateY(20px)';
+
             let cell = document.createElement('td');
             let commandText = '';
             if (punish === 'warn' || punish === '/warn') {
@@ -182,6 +190,7 @@ const punishStack = () => {
             cell.textContent = commandText;
             row.appendChild(cell);
             resultTable.appendChild(row);
+
             setTimeout(() => {
                 row.style.transition = 'all 0.3s ease';
                 row.style.opacity = '1';
@@ -189,17 +198,8 @@ const punishStack = () => {
             }, i * 100);
         }
 
-        // Добавляем кнопку копирования
-        const copyAllButton = document.createElement('button');
-        copyAllButton.className = 'copy-all-button';
-        copyAllButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> Копировать все';
-        copyAllButton.title = 'Копировать все наказания';
-        copyAllButton.onclick = copyAllPunishments;
-        
-        resultsHeader.appendChild(copyAllButton);
-
-        // Показываем результаты
         if (resultArr.length > 0) {
+            updateResultsCount(resultArr.length);
             resultsContainer.classList.add('visible');
             resultsCase.classList.add('visible');
         }
@@ -210,61 +210,41 @@ const punishStack = () => {
     }
 };
 
-const copyResult = () => {
-    const resultTable = document.getElementById('id_resultTable');
-    const rows = resultTable.getElementsByTagName('tr');
-    let text = '';
-    
-    for (let row of rows) {
-        text += row.textContent + '\n';
-    }
-    
-    navigator.clipboard.writeText(text).then(() => {
-        const copyButton = document.querySelector('.copy-button');
-        const originalText = copyButton.textContent;
-        copyButton.textContent = 'Скопировано!';
-        copyButton.classList.add('success');
-        
-        setTimeout(() => {
-            copyButton.textContent = originalText;
-            copyButton.classList.remove('success');
-        }, 2000);
-    }).catch(err => {
-        showError('Не удалось скопировать текст');
-    });
-};
-
 const copyAllPunishments = () => {
     const resultTable = document.getElementById('id_resultTable');
     const rows = resultTable.querySelectorAll('tr');
     let allCommands = '';
-    
+
     rows.forEach(row => {
+        if (row.classList.contains('error-row')) return;
         const cell = row.querySelector('td');
         if (cell) {
-            const commandText = cell.textContent.trim();
-            allCommands += commandText + '\n';
+            allCommands += cell.textContent.trim() + '\n';
         }
     });
-    
-    if (allCommands) {
-        navigator.clipboard.writeText(allCommands).then(() => {
-            const copyAllButton = document.querySelector('.copy-all-button');
-            copyAllButton.classList.add('success');
-            setTimeout(() => {
-                copyAllButton.classList.remove('success');
-            }, 1000);
-        }).catch(err => {
-            console.error('Ошибка при копировании:', err);
-        });
-    }
+
+    if (!allCommands) return;
+
+    navigator.clipboard.writeText(allCommands).then(() => {
+        const copyAllButton = document.querySelector('.copy-all-button');
+        if (!copyAllButton) return;
+        const originalHtml = copyAllButton.innerHTML;
+        copyAllButton.innerHTML = 'Скопировано!';
+        copyAllButton.classList.add('success');
+        setTimeout(() => {
+            copyAllButton.innerHTML = originalHtml;
+            copyAllButton.classList.remove('success');
+        }, 2000);
+    }).catch(() => {
+        showError('Не удалось скопировать текст');
+    });
 };
 
 const showError = (message) => {
     const resultTable = document.getElementById('id_resultTable');
     const resultsContainer = document.getElementById('id_resultsContainer');
     const resultsCase = document.querySelector('.results-case');
-    
+
     let html = '';
     const errorLines = message.split(/\n\n/);
     if (errorLines.length > 1) {
@@ -276,11 +256,10 @@ const showError = (message) => {
                     const line = match[1];
                     return `<div class="error-line" data-line="${line}">${err.replace(/\n/g,'<br>')}</div>`;
                 }
-                return `<div style="color:#fff;text-align:left;padding:8px 0;">${err.replace(/\n/g,'<br>')}</div>`;
+                return `<div style="color:var(--accent);text-align:left;padding:8px 0;">${err.replace(/\n/g,'<br>')}</div>`;
             }).join('') +
             `</div>`;
     } else {
-        // Если одна ошибка и есть номер строки — делаем её кликабельной
         const match = message.match(/строке (\d+)/i);
         if (match) {
             const line = match[1];
@@ -289,16 +268,15 @@ const showError = (message) => {
                 <div class="error-line" data-line="${line}">${message.replace(/\n/g,'<br>')}</div>
             </div>`;
         } else {
-            html = `<div class='error-block'><div style="color:#fff;text-align:left;padding:8px 0;">${message.replace(/\n/g,'<br>')}</div></div>`;
+            html = `<div class='error-block'><div style="color:var(--accent);text-align:left;padding:8px 0;">${message.replace(/\n/g,'<br>')}</div></div>`;
         }
     }
     resultTable.innerHTML = `<tr class="table__row error-row"><td>${html}</td></tr>`;
-    
-    // Показываем блок результатов с ошибкой
+    updateResultsCount(0);
+
     resultsContainer.classList.add('visible');
     resultsCase.classList.add('visible');
 
-    // Добавляем обработчик клика по ошибке
     document.querySelectorAll('.error-line').forEach(el => {
         el.addEventListener('click', function() {
             const line = parseInt(this.getAttribute('data-line'), 10);
@@ -307,11 +285,10 @@ const showError = (message) => {
             const lines = textarea.value.split('\n');
             let pos = 0;
             for (let i = 0; i < line - 1 && i < lines.length; i++) {
-                pos += lines[i].length + 1; // +1 for \n
+                pos += lines[i].length + 1;
             }
             textarea.focus();
             textarea.setSelectionRange(pos, pos);
-            // Прокрутка
             const lineHeight = textarea.scrollHeight / lines.length;
             textarea.scrollTop = (line - 1) * lineHeight - textarea.clientHeight / 2 + lineHeight;
         });
@@ -327,43 +304,33 @@ const clearInput = () => {
     const field = document.getElementById('id_punishField');
     field.value = '';
     autoResizeTextarea(field);
-    const resultsContainer = document.getElementById('id_resultsContainer');
-    const resultsCase = document.querySelector('.results-case');
-    const copyButton = document.querySelector('.copy-button');
-    resultsContainer.classList.remove('visible');
-    resultsCase.classList.remove('visible');
-    copyButton.style.display = 'none';
+    updateLineNumbers();
+    document.getElementById('id_resultTable').innerHTML = '';
+    document.getElementById('id_resultsContainer').classList.remove('visible');
+    document.querySelector('.results-case').classList.remove('visible');
+    resetResultsHeader();
+    updateResultsCount(0);
 };
 
 const toggleTextareaSize = () => {
     const textarea = document.getElementById('id_punishField');
-    const resizeButton = document.querySelector('.resize-button');
-    
-    if (textarea.style.height && textarea.style.height !== '100px') {
-        // Возвращаем к минимальному размеру
-        textarea.style.height = '100px';
+
+    if (textarea.style.height && textarea.style.height !== '120px') {
+        textarea.style.height = '120px';
     } else {
-        // Временно убираем ограничение высоты для расчета полной высоты текста
         textarea.style.height = 'auto';
-        const scrollHeight = textarea.scrollHeight;
-        // Устанавливаем новую высоту
-        textarea.style.height = `${scrollHeight}px`;
+        textarea.style.height = `${textarea.scrollHeight}px`;
     }
 };
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     const textarea = document.getElementById('id_punishField');
     const resizeButton = document.querySelector('.resize-button');
-    
-    // Устанавливаем начальную высоту
-    textarea.style.height = '100px';
-    
-    // Добавляем только обработчик для кнопки расширения
+
+    textarea.style.height = '120px';
     resizeButton.addEventListener('click', toggleTextareaSize);
 });
 
-// Добавляем обработчик нажатия Enter в поле ввода
 document.getElementById('id_punishField').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         punishStack();
@@ -392,13 +359,11 @@ function updateLineNumbers() {
     lineNumbers.innerHTML = html;
 }
 
-// Обновлять номера строк при вводе
 const punishField = document.getElementById('id_punishField');
 if (punishField) {
     punishField.addEventListener('input', updateLineNumbers);
     punishField.addEventListener('scroll', function() {
         document.getElementById('lineNumbers').scrollTop = punishField.scrollTop;
     });
-    // Инициализация при загрузке
     updateLineNumbers();
 }
